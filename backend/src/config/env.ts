@@ -14,6 +14,29 @@ function getRequiredString(name: string, fallback: string): string {
   return value;
 }
 
+function getOptionalString(name: string): string | null {
+  const value = process.env[name]?.trim();
+  return value ? value : null;
+}
+
+function getBoolean(name: string, fallback: boolean): boolean {
+  const rawValue = process.env[name]?.trim().toLowerCase();
+
+  if (!rawValue) {
+    return fallback;
+  }
+
+  if (rawValue === "true") {
+    return true;
+  }
+
+  if (rawValue === "false") {
+    return false;
+  }
+
+  throw new Error(`${name} must be true or false`);
+}
+
 function getPort(value: string): number {
   const port = Number(value);
 
@@ -30,6 +53,14 @@ function getNodeEnv(value: string): NodeEnv {
   }
 
   throw new Error("NODE_ENV must be development, production, or test");
+}
+
+function getAiProvider(value: string): "gemini" {
+  if (value.toLowerCase() === "gemini") {
+    return "gemini";
+  }
+
+  throw new Error("AI_PROVIDER must be gemini");
 }
 
 function getJwtMaxAgeMs(expiresIn: string): number {
@@ -65,6 +96,14 @@ const jwtExpiresIn = getRequiredString("JWT_EXPIRES_IN", "");
 const adminSeedName = getRequiredString("ADMIN_SEED_NAME", "");
 const adminSeedEmail = getRequiredString("ADMIN_SEED_EMAIL", "");
 const adminSeedPassword = getRequiredString("ADMIN_SEED_PASSWORD", "");
+const aiEnabled = getBoolean("AI_ENABLED", false);
+const aiProvider = getAiProvider(getRequiredString("AI_PROVIDER", "gemini"));
+const geminiModel = getRequiredString("GEMINI_MODEL", "gemini-2.5-flash");
+const geminiApiKey = getOptionalString("GEMINI_API_KEY");
+
+if (aiEnabled && aiProvider === "gemini" && !geminiApiKey) {
+  throw new Error("GEMINI_API_KEY is required when AI_ENABLED=true and AI_PROVIDER=gemini");
+}
 
 export const env = {
   port: getPort(portValue),
@@ -77,5 +116,9 @@ export const env = {
   adminSeedName,
   adminSeedEmail,
   adminSeedPassword,
+  aiEnabled,
+  aiProvider,
+  geminiModel,
+  geminiApiKey,
   serviceName: "toyota-ai-advisor-backend",
 } as const;
