@@ -5,12 +5,13 @@ import { asyncHandler } from "../utils/asyncHandler";
 export const dbHealthRouter = Router();
 
 /**
- * @openapi
+ * @swagger
  * /api/health/db:
  *   get:
  *     tags:
  *       - Health
  *     summary: Database health check
+ *     operationId: getDatabaseHealth
  *     responses:
  *       200:
  *         description: Database is connected

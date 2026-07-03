@@ -4,12 +4,13 @@ import { asyncHandler } from "../utils/asyncHandler";
 export const healthRouter = Router();
 
 /**
- * @openapi
+ * @swagger
  * /api/health:
  *   get:
  *     tags:
  *       - Health
  *     summary: Health check
+ *     operationId: getHealth
  *     responses:
  *       200:
  *         description: Service is healthy

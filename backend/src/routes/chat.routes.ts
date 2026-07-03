@@ -6,12 +6,14 @@ import { requireAuth, requireAdmin } from "../middleware/auth.middleware";
 export const chatRoutes = Router();
 
 /**
- * @openapi
+ * @swagger
  * /api/chat/message:
  *   post:
  *     tags:
  *       - Chat
  *     summary: Send a message to the local Toyota knowledge chat
+ *     operationId: sendChatMessage
+ *     description: Omit sessionId to start a new chat session. Pass a valid existing sessionId to continue a conversation.
  *     requestBody:
  *       required: true
  *       content:
@@ -21,12 +23,19 @@ export const chatRoutes = Router();
  *             required:
  *               - message
  *             properties:
- *               sessionId:
- *                 type: string
- *                 example: 550e8400-e29b-41d4-a716-446655440000
  *               message:
  *                 type: string
  *                 example: I need a family car under 20 lakh
+ *           examples:
+ *             newChat:
+ *               summary: Start a new chat session
+ *               value:
+ *                 message: I need a family car under 20 lakh
+ *             continueChat:
+ *               summary: Continue an existing chat session
+ *               value:
+ *                 sessionId: 550e8400-e29b-41d4-a716-446655440000
+ *                 message: I want a hybrid SUV
  *     responses:
  *       200:
  *         description: Chat response generated from local knowledge
@@ -38,12 +47,13 @@ export const chatRoutes = Router();
 chatRoutes.post("/message", asyncHandler(chatController.sendMessage));
 
 /**
- * @openapi
+ * @swagger
  * /api/chat/sessions/{sessionId}/messages:
  *   get:
  *     tags:
  *       - Chat
  *     summary: Get all messages for a chat session
+ *     operationId: getChatSessionMessages
  *     parameters:
  *       - in: path
  *         name: sessionId

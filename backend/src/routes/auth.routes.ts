@@ -6,12 +6,13 @@ import { requireAuth } from "../middleware/auth.middleware";
 export const authRouter = Router();
 
 /**
- * @openapi
+ * @swagger
  * /api/auth/login:
  *   post:
  *     tags:
  *       - Auth
  *     summary: Login as admin
+ *     operationId: loginAdmin
  *     requestBody:
  *       required: true
  *       content:
@@ -61,12 +62,13 @@ export const authRouter = Router();
 authRouter.post("/login", asyncHandler(authController.login));
 
 /**
- * @openapi
+ * @swagger
  * /api/auth/me:
  *   get:
  *     tags:
  *       - Auth
  *     summary: Get the currently authenticated user
+ *     operationId: getCurrentUser
  *     responses:
  *       200:
  *         description: Current user
@@ -98,12 +100,13 @@ authRouter.post("/login", asyncHandler(authController.login));
 authRouter.get("/me", requireAuth, asyncHandler(authController.me));
 
 /**
- * @openapi
+ * @swagger
  * /api/auth/logout:
  *   post:
  *     tags:
  *       - Auth
  *     summary: Logout the current user
+ *     operationId: logoutAdmin
  *     responses:
  *       200:
  *         description: Logged out successfully
@@ -122,12 +125,13 @@ authRouter.get("/me", requireAuth, asyncHandler(authController.me));
 authRouter.post("/logout", asyncHandler(authController.logout));
 
 /**
- * @openapi
+ * @swagger
  * /api/auth/protected-test:
  *   get:
  *     tags:
  *       - Auth
  *     summary: Test protected route access
+ *     operationId: protectedTest
  *     responses:
  *       200:
  *         description: You are authenticated

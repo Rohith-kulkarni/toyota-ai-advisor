@@ -6,12 +6,13 @@ import { requireAuth, requireAdmin } from "../middleware/auth.middleware";
 export const knowledgeRouter = Router();
 
 /**
- * @openapi
+ * @swagger
  * /api/knowledge/models:
  *   get:
  *     tags:
  *       - Knowledge
  *     summary: Get all Toyota model summaries
+ *     operationId: getToyotaModelSummaries
  *     responses:
  *       200:
  *         description: List of Toyota model summaries
@@ -28,12 +29,13 @@ knowledgeRouter.get(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/knowledge/models/{slug}:
  *   get:
  *     tags:
  *       - Knowledge
  *     summary: Get a Toyota model by slug
+ *     operationId: getToyotaModelBySlug
  *     parameters:
  *       - in: path
  *         name: slug
@@ -59,12 +61,13 @@ knowledgeRouter.get(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/knowledge/search:
  *   get:
  *     tags:
  *       - Knowledge
  *     summary: Search local Toyota knowledge
+ *     operationId: searchToyotaKnowledge
  *     parameters:
  *       - in: query
  *         name: q
