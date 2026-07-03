@@ -61,6 +61,9 @@ export type LeadSummary = {
   source: string;
   status: LeadStatus;
   notes: string | null;
+  chatSummary: string | null;
+  leadScore: number | null;
+  leadScoreReason: string | null;
   createdAt: string;
   updatedAt: string;
   chatSession: {
@@ -134,6 +137,12 @@ export async function updateLeadNotes(id: string, notes: string) {
   return request<{ status: "ok"; lead: LeadDetail }>(`/leads/${id}/notes`, {
     method: "PATCH",
     body: { notes },
+  });
+}
+
+export async function generateLeadInsights(id: string) {
+  return request<{ status: "ok"; lead: LeadDetail }>(`/leads/${id}/insights`, {
+    method: "POST",
   });
 }
 

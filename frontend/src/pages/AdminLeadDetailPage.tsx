@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getLeadById, type LeadDetail, type LeadStatus, updateLeadNotes, updateLeadStatus } from "../api/client";
+import {
+  generateLeadInsights,
+  getLeadById,
+  type LeadDetail,
+  type LeadStatus,
+  updateLeadNotes,
+  updateLeadStatus,
+} from "../api/client";
 
 const STATUS_OPTIONS: LeadStatus[] = [
   "NEW",
@@ -14,6 +21,38 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
 
+function getLeadScoreLabel(score: number | null | undefined) {
+  if (score == null) {
+    return "Not generated";
+  }
+
+  if (score >= 75) {
+    return `Hot lead (${score})`;
+  }
+
+  if (score >= 40) {
+    return `Warm lead (${score})`;
+  }
+
+  return `Cold lead (${score})`;
+}
+
+function getLeadScoreTone(score: number | null | undefined) {
+  if (score == null) {
+    return "lead-score-none";
+  }
+
+  if (score >= 75) {
+    return "insight-score-hot";
+  }
+
+  if (score >= 40) {
+    return "insight-score-warm";
+  }
+
+  return "insight-score-cold";
+}
+
 function AdminLeadDetailPage() {
   const { id } = useParams();
   const [lead, setLead] = useState<LeadDetail | null>(null);
@@ -23,6 +62,9 @@ function AdminLeadDetailPage() {
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
+  const [insightError, setInsightError] = useState("");
+  const [insightSuccess, setInsightSuccess] = useState("");
+  const [insightLoading, setInsightLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +138,30 @@ function AdminLeadDetailPage() {
     }
   }
 
+  async function handleGenerateInsights() {
+    if (!id) {
+      return;
+    }
+
+    setSaveError("");
+    setSaveSuccess("");
+    setInsightError("");
+    setInsightSuccess("");
+    setInsightLoading(true);
+
+    try {
+      const response = await generateLeadInsights(id);
+      setLead(response.lead);
+      setStatus(response.lead.status);
+      setNotes(response.lead.notes ?? "");
+      setInsightSuccess("Insights generated.");
+    } catch (error) {
+      setInsightError(error instanceof Error ? error.message : "Failed to generate insights");
+    } finally {
+      setInsightLoading(false);
+    }
+  }
+
   if (isLoading) {
     return <main className="admin-card">Loading lead...</main>;
   }
@@ -166,6 +232,34 @@ function AdminLeadDetailPage() {
         </div>
 
         <div className="detail-card">
+          <h2>Lead insights</h2>
+          <div className="insight-summary">
+            <div className="insight-score-row">
+              <span className={`insight-score-label ${getLeadScoreTone(lead.leadScore)}`}>
+                {getLeadScoreLabel(lead.leadScore)}
+              </span>
+              <span className="insight-score-value">
+                {lead.leadScore != null ? `${lead.leadScore}/100` : "No score yet"}
+              </span>
+            </div>
+            <p className="insight-text">{lead.chatSummary || "Generate insights to create a short chat summary."}</p>
+            <p className="insight-reason">
+              {lead.leadScoreReason || "Generate insights to see the score breakdown."}
+            </p>
+          </div>
+          <div className="insight-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => void handleGenerateInsights()}
+              disabled={insightLoading}
+            >
+              {insightLoading ? "Generating..." : "Generate insights"}
+            </button>
+          </div>
+          {insightError ? <div className="alert alert-error">{insightError}</div> : null}
+          {insightSuccess ? <div className="alert alert-success">{insightSuccess}</div> : null}
+
           <h2>Update status</h2>
           <div className="stack">
             <select value={status} onChange={(event) => setStatus(event.target.value as LeadStatus)}>

@@ -18,6 +18,9 @@ const leadListSelect = {
   source: true,
   status: true,
   notes: true,
+  chatSummary: true,
+  leadScore: true,
+  leadScoreReason: true,
   createdAt: true,
   updatedAt: true,
   chatSessions: {
@@ -97,6 +100,9 @@ export async function getLeadById(id: string) {
       source: true,
       status: true,
       notes: true,
+      chatSummary: true,
+      leadScore: true,
+      leadScoreReason: true,
       createdAt: true,
       updatedAt: true,
       chatSessions: {
@@ -121,6 +127,24 @@ export async function getLeadById(id: string) {
           },
         },
       },
+    },
+  });
+}
+
+export async function updateLeadInsights(
+  id: string,
+  input: {
+    chatSummary: string;
+    leadScore: number;
+    leadScoreReason: string;
+  }
+) {
+  return prisma.lead.update({
+    where: { id },
+    data: {
+      chatSummary: input.chatSummary,
+      leadScore: input.leadScore,
+      leadScoreReason: input.leadScoreReason,
     },
   });
 }

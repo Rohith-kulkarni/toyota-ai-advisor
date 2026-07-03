@@ -1,0 +1,3 @@
+ALTER TABLE "Lead" ADD COLUMN "chatSummary" TEXT;
+ALTER TABLE "Lead" ADD COLUMN "leadScore" INTEGER;
+ALTER TABLE "Lead" ADD COLUMN "leadScoreReason" TEXT;

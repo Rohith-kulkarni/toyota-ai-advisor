@@ -207,3 +207,35 @@ leadRoutes.patch(
   requireAdmin,
   asyncHandler(leadController.changeLeadNotes)
 );
+
+/**
+ * @swagger
+ * /api/leads/{id}/insights:
+ *   post:
+ *     tags:
+ *       - Leads
+ *     summary: Generate rule-based lead insights
+ *     operationId: generateLeadInsights
+ *     description: Creates a simple chat summary and lead score from the stored lead data and linked chat messages.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lead insights generated
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Lead not found
+ */
+leadRoutes.post(
+  "/:id/insights",
+  requireAuth,
+  requireAdmin,
+  asyncHandler(leadController.generateInsights)
+);

@@ -6,6 +6,38 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
 
+function getLeadScoreLabel(score: number | null | undefined) {
+  if (score == null) {
+    return "Not generated";
+  }
+
+  if (score >= 75) {
+    return `Hot lead (${score})`;
+  }
+
+  if (score >= 40) {
+    return `Warm lead (${score})`;
+  }
+
+  return `Cold lead (${score})`;
+}
+
+function getLeadScoreTone(score: number | null | undefined) {
+  if (score == null) {
+    return "lead-score-none";
+  }
+
+  if (score >= 75) {
+    return "lead-score-hot";
+  }
+
+  if (score >= 40) {
+    return "lead-score-warm";
+  }
+
+  return "lead-score-cold";
+}
+
 function AdminLeadsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [leads, setLeads] = useState<Awaited<ReturnType<typeof getLeads>>["leads"]>([]);
@@ -120,6 +152,7 @@ function AdminLeadsPage() {
             <span>Budget</span>
             <span>Timeline</span>
             <span>Status</span>
+            <span>Score</span>
             <span>Created</span>
             <span>Session</span>
           </div>
@@ -135,6 +168,9 @@ function AdminLeadsPage() {
                 <span>{lead.budget || "-"}</span>
                 <span>{lead.purchaseTimeline || "-"}</span>
                 <span className={`status-badge status-${lead.status.toLowerCase()}`}>{lead.status}</span>
+                <span className={`lead-score-label ${getLeadScoreTone(lead.leadScore)}`}>
+                  {getLeadScoreLabel(lead.leadScore)}
+                </span>
                 <span>{formatDate(lead.createdAt)}</span>
                 <span>{lead.chatSession?.sessionId ?? "-"}</span>
               </Link>

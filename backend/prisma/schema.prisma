@@ -47,6 +47,9 @@ model Lead {
   source           String     @default("website_chat")
   status           LeadStatus @default(NEW)
   notes            String?
+  chatSummary      String?    @db.Text
+  leadScore        Int?
+  leadScoreReason  String?    @db.Text
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
   chatSessions     ChatSession[]
