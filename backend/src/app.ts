@@ -17,6 +17,30 @@ import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, "").toLowerCase();
+}
+
+const corsOptions = {
+  credentials: true,
+  origin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    if (env.corsOrigins.includes(normalizedOrigin)) {
+      callback(null, true);
+      return;
+    }
+
+    console.warn("[cors] blocked origin:", origin);
+    callback(null, false);
+  },
+};
+
 app.disable("x-powered-by");
 
 app.use(
@@ -32,24 +56,8 @@ app.use(
     },
   })
 );
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-
-      if (env.corsOrigins.includes(origin)) {
-        callback(null, origin);
-        return;
-      }
-
-      callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

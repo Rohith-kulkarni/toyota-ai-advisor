@@ -40,7 +40,7 @@ function getBoolean(name: string, fallback: boolean): boolean {
 function parseList(value: string): string[] {
   return value
     .split(",")
-    .map((item) => item.trim())
+    .map((item) => item.trim().replace(/\/+$/, "").toLowerCase())
     .filter(Boolean);
 }
 
