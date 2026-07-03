@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
@@ -7,6 +8,7 @@ import { env } from "./config/env";
 import { swaggerSpec } from "./config/swagger";
 import { healthRouter } from "./routes/health.routes";
 import { dbHealthRouter } from "./routes/health.db.routes";
+import { authRouter } from "./routes/auth.routes";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -30,14 +32,17 @@ app.use(
 app.use(
   cors({
     origin: env.corsOrigin,
+    credentials: true,
   })
 );
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 
 app.use("/api", healthRouter);
 app.use("/api", dbHealthRouter);
+app.use("/api/auth", authRouter);
 app.get("/api/docs.json", (_req, res) => {
   res.json(swaggerSpec);
 });
