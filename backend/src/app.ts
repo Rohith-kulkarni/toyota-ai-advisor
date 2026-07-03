@@ -9,6 +9,7 @@ import { swaggerSpec } from "./config/swagger";
 import { healthRouter } from "./routes/health.routes";
 import { dbHealthRouter } from "./routes/health.db.routes";
 import { authRouter } from "./routes/auth.routes";
+import { knowledgeRouter } from "./routes/knowledge.routes";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -43,6 +44,7 @@ app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 app.use("/api", healthRouter);
 app.use("/api", dbHealthRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/knowledge", knowledgeRouter);
 app.get("/api/docs.json", (_req, res) => {
   res.json(swaggerSpec);
 });
