@@ -37,6 +37,13 @@ function getBoolean(name: string, fallback: boolean): boolean {
   throw new Error(`${name} must be true or false`);
 }
 
+function parseList(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function getPort(value: string): number {
   const port = Number(value);
 
@@ -90,6 +97,12 @@ function getJwtMaxAgeMs(expiresIn: string): number {
 const portValue = getRequiredString("PORT", "4000");
 const nodeEnvValue = getRequiredString("NODE_ENV", "development");
 const corsOrigin = getRequiredString("CORS_ORIGIN", "http://localhost:3000");
+const corsOrigins = parseList(corsOrigin);
+
+if (corsOrigins.length === 0) {
+  throw new Error("CORS_ORIGIN must include at least one allowed origin");
+}
+
 const databaseUrl = getRequiredString("DATABASE_URL", "");
 const jwtAccessSecret = getRequiredString("JWT_ACCESS_SECRET", "");
 const jwtExpiresIn = getRequiredString("JWT_EXPIRES_IN", "");
@@ -109,6 +122,7 @@ export const env = {
   port: getPort(portValue),
   nodeEnv: getNodeEnv(nodeEnvValue),
   corsOrigin,
+  corsOrigins,
   databaseUrl,
   jwtAccessSecret,
   jwtExpiresIn,

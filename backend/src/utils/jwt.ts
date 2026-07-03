@@ -34,11 +34,24 @@ export function verifyAccessToken(token: string): AuthTokenPayload {
   };
 }
 
+function isLocalOrigin(origin: string): boolean {
+  return origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1");
+}
+
+function getAuthCookieSameSite(): CookieOptions["sameSite"] {
+  if (env.nodeEnv !== "production") {
+    return "lax";
+  }
+
+  const allOriginsAreLocal = env.corsOrigins.every(isLocalOrigin);
+  return allOriginsAreLocal ? "lax" : "none";
+}
+
 export function getAuthCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: env.nodeEnv === "production",
-    sameSite: "lax",
+    sameSite: getAuthCookieSameSite(),
     maxAge: env.jwtCookieMaxAgeMs,
     path: "/",
   };
@@ -48,7 +61,7 @@ export function getClearedAuthCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: env.nodeEnv === "production",
-    sameSite: "lax",
+    sameSite: getAuthCookieSameSite(),
     path: "/",
   };
 }
