@@ -10,6 +10,7 @@ import { healthRouter } from "./routes/health.routes";
 import { dbHealthRouter } from "./routes/health.db.routes";
 import { authRouter } from "./routes/auth.routes";
 import { knowledgeRouter } from "./routes/knowledge.routes";
+import { chatRoutes } from "./routes/chat.routes";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -45,6 +46,7 @@ app.use("/api", healthRouter);
 app.use("/api", dbHealthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/knowledge", knowledgeRouter);
+app.use("/api/chat", chatRoutes);
 app.get("/api/docs.json", (_req, res) => {
   res.json(swaggerSpec);
 });
