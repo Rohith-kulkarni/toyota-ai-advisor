@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  SALES
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  TEST_DRIVE_SCHEDULED
+  CONVERTED
+  LOST
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Lead {
+  id               String     @id @default(uuid()) @db.Uuid
+  name             String?
+  phone            String?
+  city             String?
+  interestedModel  String?
+  budget           String?
+  purchaseTimeline String?
+  source           String     @default("website_chat")
+  status           LeadStatus @default(NEW)
+  notes            String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  chatSessions     ChatSession[]
+}
+
+model ChatSession {
+  id         String        @id @default(uuid()) @db.Uuid
+  leadId     String?       @db.Uuid
+  sessionId  String        @unique
+  lead       Lead?         @relation(fields: [leadId], references: [id])
+  messages   ChatMessage[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id            String      @id @default(uuid()) @db.Uuid
+  chatSessionId  String      @db.Uuid
+  role           ChatRole
+  message        String      @db.Text
+  chatSession    ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+}

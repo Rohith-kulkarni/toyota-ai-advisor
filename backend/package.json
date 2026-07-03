@@ -1,0 +1,36 @@
+{
+  "name": "toyota-ai-advisor-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend foundation for the Toyota dealership AI advisor MVP",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.12.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.10.10",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "prisma": "^6.12.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
