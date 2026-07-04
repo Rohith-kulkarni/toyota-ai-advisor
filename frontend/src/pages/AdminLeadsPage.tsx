@@ -38,6 +38,13 @@ function getLeadScoreTone(score: number | null | undefined) {
   return "lead-score-cold";
 }
 
+function hasLeadBadges(lead: {
+  testDriveRequested: boolean;
+  financeAssistanceRequested: boolean;
+}) {
+  return lead.testDriveRequested || lead.financeAssistanceRequested;
+}
+
 function AdminLeadsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [leads, setLeads] = useState<Awaited<ReturnType<typeof getLeads>>["leads"]>([]);
@@ -151,6 +158,7 @@ function AdminLeadsPage() {
             <span>Model</span>
             <span>Budget</span>
             <span>Timeline</span>
+            <span>Flags</span>
             <span>Status</span>
             <span>Score</span>
             <span>Created</span>
@@ -167,6 +175,11 @@ function AdminLeadsPage() {
                 <span>{lead.interestedModel || "-"}</span>
                 <span>{lead.budget || "-"}</span>
                 <span>{lead.purchaseTimeline || "-"}</span>
+                <span className="lead-flag-badges">
+                  {lead.testDriveRequested ? <span className="lead-flag-badge">Test Drive</span> : null}
+                  {lead.financeAssistanceRequested ? <span className="lead-flag-badge">Finance</span> : null}
+                  {!hasLeadBadges(lead) ? "-" : null}
+                </span>
                 <span className={`status-badge status-${lead.status.toLowerCase()}`}>{lead.status}</span>
                 <span className={`lead-score-label ${getLeadScoreTone(lead.leadScore)}`}>
                   {getLeadScoreLabel(lead.leadScore)}

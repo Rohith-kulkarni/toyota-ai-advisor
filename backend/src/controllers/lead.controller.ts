@@ -1,24 +1,58 @@
 import type { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import {
+  createLead,
   createLeadFromChat,
+  createTestDriveRequest,
   getAllLeads,
   getLeadById,
+  updateLeadFinance,
   updateLeadInsights,
   updateLeadNotes,
   updateLeadStatus,
+  updateLeadTestDrive,
 } from "../services/lead.service";
 import { generateLeadInsights } from "../services/leadInsight.service";
 import {
+  createLeadSchema,
   createLeadFromChatSchema,
+  createTestDriveRequestSchema,
   leadIdParamsSchema,
   leadListQuerySchema,
+  pilotBranches,
+  updateLeadFinanceSchema,
   updateLeadNotesSchema,
   updateLeadStatusSchema,
+  updateLeadTestDriveSchema,
 } from "../validators/lead.validator";
 
+type CreatedLeadRecord = Awaited<ReturnType<typeof createLead>>;
 type LeadListRecord = Awaited<ReturnType<typeof getAllLeads>>[number];
 type LeadDetailRecord = NonNullable<Awaited<ReturnType<typeof getLeadById>>>;
+type TestDriveLeadRecord = Awaited<ReturnType<typeof createTestDriveRequest>>;
+
+function mapCreatedLeadItem(lead: CreatedLeadRecord) {
+  return {
+    id: lead.id,
+    name: lead.name,
+    phone: lead.phone,
+    city: lead.city,
+    interestedModel: lead.interestedModel,
+    source: lead.source,
+    status: lead.status,
+  };
+}
+
+function mapCreatedTestDriveLeadItem(lead: TestDriveLeadRecord) {
+  return {
+    ...mapCreatedLeadItem(lead),
+    testDriveRequested: lead.testDriveRequested,
+    preferredTestDriveDate: lead.preferredTestDriveDate,
+    preferredTestDriveTime: lead.preferredTestDriveTime,
+    testDriveLocation: lead.testDriveLocation,
+    notes: lead.notes,
+  };
+}
 
 function mapLeadListItem(lead: LeadListRecord) {
   return {
@@ -29,6 +63,15 @@ function mapLeadListItem(lead: LeadListRecord) {
     interestedModel: lead.interestedModel,
     budget: lead.budget,
     purchaseTimeline: lead.purchaseTimeline,
+    testDriveRequested: lead.testDriveRequested,
+    preferredTestDriveDate: lead.preferredTestDriveDate,
+    preferredTestDriveTime: lead.preferredTestDriveTime,
+    testDriveLocation: lead.testDriveLocation,
+    financeAssistanceRequested: lead.financeAssistanceRequested,
+    monthlyIncomeRange: lead.monthlyIncomeRange,
+    downPaymentBudget: lead.downPaymentBudget,
+    loanTenurePreference: lead.loanTenurePreference,
+    emiBudget: lead.emiBudget,
     source: lead.source,
     status: lead.status,
     notes: lead.notes,
@@ -54,6 +97,15 @@ function mapLeadDetailItem(lead: LeadDetailRecord) {
     interestedModel: lead.interestedModel,
     budget: lead.budget,
     purchaseTimeline: lead.purchaseTimeline,
+    testDriveRequested: lead.testDriveRequested,
+    preferredTestDriveDate: lead.preferredTestDriveDate,
+    preferredTestDriveTime: lead.preferredTestDriveTime,
+    testDriveLocation: lead.testDriveLocation,
+    financeAssistanceRequested: lead.financeAssistanceRequested,
+    monthlyIncomeRange: lead.monthlyIncomeRange,
+    downPaymentBudget: lead.downPaymentBudget,
+    loanTenurePreference: lead.loanTenurePreference,
+    emiBudget: lead.emiBudget,
     source: lead.source,
     status: lead.status,
     notes: lead.notes,
@@ -82,6 +134,33 @@ function getPrismaErrorMessage(error: unknown): string | null {
   return null;
 }
 
+function normalizeBranchName(branch: string): string | null {
+  const normalizedBranch = branch.trim().toLowerCase();
+
+  return (
+    pilotBranches.find((candidate) => candidate.toLowerCase() === normalizedBranch) ?? null
+  );
+}
+
+export async function createLeadEntry(req: Request, res: Response): Promise<void> {
+  const result = createLeadSchema.safeParse(req.body);
+
+  if (!result.success) {
+    res.status(400).json({
+      message: result.error.issues[0]?.message || "Invalid request body",
+    });
+    return;
+  }
+
+  const lead = await createLead(result.data);
+
+  res.status(201).json({
+    status: "ok",
+    message: "Lead created successfully",
+    lead: mapCreatedLeadItem(lead),
+  });
+}
+
 export async function createFromChat(req: Request, res: Response): Promise<void> {
   const result = createLeadFromChatSchema.safeParse(req.body);
 
@@ -105,6 +184,38 @@ export async function createFromChat(req: Request, res: Response): Promise<void>
     status: "ok",
     lead: created.lead,
     sessionId: created.chatSession.sessionId,
+  });
+}
+
+export async function createTestDriveEntry(req: Request, res: Response): Promise<void> {
+  const result = createTestDriveRequestSchema.safeParse(req.body);
+
+  if (!result.success) {
+    res.status(400).json({
+      message: result.error.issues[0]?.message || "Invalid request body",
+    });
+    return;
+  }
+
+  const branch = normalizeBranchName(result.data.branch);
+
+  if (!branch) {
+    res.status(400).json({
+      message:
+        "Test drive pilot is currently available only for Sanathnagar, Tolichowki, and Kushaiguda.",
+    });
+    return;
+  }
+
+  const lead = await createTestDriveRequest({
+    ...result.data,
+    branch,
+  });
+
+  res.status(201).json({
+    status: "ok",
+    message: "Test drive request logged. Dealership team will confirm availability.",
+    lead: mapCreatedTestDriveLeadItem(lead),
   });
 }
 
@@ -243,6 +354,96 @@ export async function changeLeadNotes(req: Request, res: Response): Promise<void
   }
 }
 
+export async function changeLeadTestDrive(req: Request, res: Response): Promise<void> {
+  const paramsResult = leadIdParamsSchema.safeParse({
+    id: req.params.id,
+  });
+  const bodyResult = updateLeadTestDriveSchema.safeParse(req.body);
+
+  if (!paramsResult.success) {
+    res.status(400).json({
+      message: paramsResult.error.issues[0]?.message || "Invalid lead id",
+    });
+    return;
+  }
+
+  if (!bodyResult.success) {
+    res.status(400).json({
+      message: bodyResult.error.issues[0]?.message || "Invalid request body",
+    });
+    return;
+  }
+
+  try {
+    const lead = await updateLeadTestDrive(paramsResult.data.id, bodyResult.data);
+    const refreshedLead = await getLeadById(lead.id);
+
+    if (!refreshedLead) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+
+    res.json({
+      status: "ok",
+      lead: mapLeadDetailItem(refreshedLead),
+    });
+  } catch (error) {
+    const message = getPrismaErrorMessage(error);
+
+    if (message) {
+      res.status(404).json({ message });
+      return;
+    }
+
+    throw error;
+  }
+}
+
+export async function changeLeadFinance(req: Request, res: Response): Promise<void> {
+  const paramsResult = leadIdParamsSchema.safeParse({
+    id: req.params.id,
+  });
+  const bodyResult = updateLeadFinanceSchema.safeParse(req.body);
+
+  if (!paramsResult.success) {
+    res.status(400).json({
+      message: paramsResult.error.issues[0]?.message || "Invalid lead id",
+    });
+    return;
+  }
+
+  if (!bodyResult.success) {
+    res.status(400).json({
+      message: bodyResult.error.issues[0]?.message || "Invalid request body",
+    });
+    return;
+  }
+
+  try {
+    const lead = await updateLeadFinance(paramsResult.data.id, bodyResult.data);
+    const refreshedLead = await getLeadById(lead.id);
+
+    if (!refreshedLead) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+
+    res.json({
+      status: "ok",
+      lead: mapLeadDetailItem(refreshedLead),
+    });
+  } catch (error) {
+    const message = getPrismaErrorMessage(error);
+
+    if (message) {
+      res.status(404).json({ message });
+      return;
+    }
+
+    throw error;
+  }
+}
+
 export async function generateInsights(req: Request, res: Response): Promise<void> {
   const paramsResult = leadIdParamsSchema.safeParse({
     id: req.params.id,
@@ -282,10 +483,14 @@ export async function generateInsights(req: Request, res: Response): Promise<voi
 }
 
 export const leadController = {
+  createLeadEntry,
   createFromChat,
+  createTestDriveEntry,
   listLeads,
   getLead,
   changeLeadStatus,
   changeLeadNotes,
+  changeLeadTestDrive,
+  changeLeadFinance,
   generateInsights,
 };

@@ -58,6 +58,15 @@ export type LeadSummary = {
   interestedModel: string | null;
   budget: string | null;
   purchaseTimeline: string | null;
+  testDriveRequested: boolean;
+  preferredTestDriveDate: string | null;
+  preferredTestDriveTime: string | null;
+  testDriveLocation: string | null;
+  financeAssistanceRequested: boolean;
+  monthlyIncomeRange: string | null;
+  downPaymentBudget: string | null;
+  loanTenurePreference: string | null;
+  emiBudget: string | null;
   source: string;
   status: LeadStatus;
   notes: string | null;
@@ -140,6 +149,37 @@ export async function updateLeadNotes(id: string, notes: string) {
   });
 }
 
+export async function updateLeadTestDrive(
+  id: string,
+  payload: {
+    testDriveRequested: boolean;
+    preferredTestDriveDate?: string;
+    preferredTestDriveTime?: string;
+    testDriveLocation?: string;
+  }
+) {
+  return request<{ status: "ok"; lead: LeadDetail }>(`/leads/${id}/test-drive`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export async function updateLeadFinance(
+  id: string,
+  payload: {
+    financeAssistanceRequested: boolean;
+    monthlyIncomeRange?: string;
+    downPaymentBudget?: string;
+    loanTenurePreference?: string;
+    emiBudget?: string;
+  }
+) {
+  return request<{ status: "ok"; lead: LeadDetail }>(`/leads/${id}/finance`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
 export async function generateLeadInsights(id: string) {
   return request<{ status: "ok"; lead: LeadDetail }>(`/leads/${id}/insights`, {
     method: "POST",
@@ -166,6 +206,15 @@ export async function createLeadFromChat(payload: {
   interestedModel?: string;
   budget?: string;
   purchaseTimeline?: string;
+  testDriveRequested?: boolean;
+  preferredTestDriveDate?: string;
+  preferredTestDriveTime?: string;
+  testDriveLocation?: string;
+  financeAssistanceRequested?: boolean;
+  monthlyIncomeRange?: string;
+  downPaymentBudget?: string;
+  loanTenurePreference?: string;
+  emiBudget?: string;
   notes?: string;
 }) {
   return request<{ status: "ok"; lead: unknown; sessionId: string }>("/leads/from-chat", {

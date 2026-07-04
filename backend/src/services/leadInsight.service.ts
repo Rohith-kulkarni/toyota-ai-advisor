@@ -13,6 +13,8 @@ export type LeadInsightSource = {
   interestedModel: string | null;
   budget: string | null;
   purchaseTimeline: string | null;
+  testDriveRequested: boolean;
+  financeAssistanceRequested: boolean;
   chatSessions: InsightChatSession[];
 };
 
@@ -84,6 +86,16 @@ export function generateLeadInsights(lead: LeadInsightSource): LeadInsightResult
   if (lead.city?.trim()) {
     leadScore += 10;
     scoreParts.push("city shared (+10)");
+  }
+
+  if (lead.testDriveRequested) {
+    leadScore += 15;
+    scoreParts.push("test drive requested (+15)");
+  }
+
+  if (lead.financeAssistanceRequested) {
+    leadScore += 10;
+    scoreParts.push("finance assistance requested (+10)");
   }
 
   if (intentScore > 0) {

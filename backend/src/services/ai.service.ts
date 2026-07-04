@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { env } from "../config/env";
 import type { ToyotaModelSearchResult, ToyotaSearchIntent } from "./knowledge.service";
+import type { ResponsibilityAssistance } from "./responsibilityAssistant.service";
 
 type ChatHistoryItem = {
   role: "USER" | "ASSISTANT" | "SYSTEM";
@@ -25,9 +26,32 @@ type GenerateToyotaReplyInput = {
   recentChatHistory: ChatHistoryItem[];
   detectedIntent: ToyotaSearchIntent;
   conversationContext: ConversationContext;
+  responsibilityAssistance?: ResponsibilityAssistance | null;
 };
 
 let geminiClient: GoogleGenAI | null = null;
+
+function hasTestDriveIntent(text: string): boolean {
+  const normalizedText = text.toLowerCase();
+
+  return [
+    "test drive",
+    "test-drive",
+    "book a test drive",
+    "book test drive",
+    "schedule a test drive",
+    "drive the car",
+    "test drive booking",
+  ].some((term) => normalizedText.includes(term));
+}
+
+function hasFinanceIntent(text: string): boolean {
+  const normalizedText = text.toLowerCase();
+
+  return ["finance", "emi", "loan", "down payment", "downpayment", "monthly installment"].some((term) =>
+    normalizedText.includes(term)
+  );
+}
 
 function getGeminiClient(): GoogleGenAI {
   if (!env.geminiApiKey) {
@@ -116,6 +140,12 @@ function buildSystemInstruction(): string {
     "Help users choose Toyota cars using only the Toyota knowledge provided in the prompt.",
     "Do not invent exact prices, discounts, offers, finance approvals, availability, delivery timelines, or on-road prices.",
     "When mentioning prices, say they should be verified with the dealership.",
+    "If the user asks about a test drive, ask for city or showroom preference, preferred date, and preferred time.",
+    "If the user asks about a test drive, never confirm booking automatically and say the dealership team will confirm availability.",
+    "If the user asks about finance or EMI, ask for budget, down payment, preferred tenure, and EMI comfort.",
+    "Do not promise loan approval.",
+    "Do not claim an exact EMI unless a calculator or verified dealership calculation is available.",
+    "Say finance details should be verified by the dealership or finance team.",
     "Keep replies short, friendly, and helpful.",
     "Ask useful follow-up questions about budget, city, seating requirement, preferred fuel type, and purchase timeline when needed.",
     "Encourage the user to submit their details for a dealership callback when appropriate.",
@@ -125,6 +155,8 @@ function buildSystemInstruction(): string {
 }
 
 function buildPrompt(input: GenerateToyotaReplyInput): string {
+  const responsibilityAssistance = input.responsibilityAssistance;
+
   return [
     "Important response rules:",
     "- Return plain text only.",
@@ -155,15 +187,40 @@ function buildPrompt(input: GenerateToyotaReplyInput): string {
     "- Do not ignore previous budget when the latest message is short.",
     "- If a model is outside the user's budget, do not recommend it as a fit.",
     "- You may mention outside-budget models only as outside budget.",
+    "- If the user asks about a test drive, ask for city or showroom preference, preferred date, and preferred time before discussing anything else.",
+    "- If the user asks about a test drive, never confirm booking automatically and say the dealership team will confirm availability.",
+    "- If the user asks about finance or EMI, ask for budget, down payment, preferred tenure, and EMI comfort before discussing anything else.",
+    "- Do not promise loan approval.",
+    "- Do not claim an exact EMI unless a calculator or verified dealership calculation is available.",
+    "- Say finance details should be verified by the dealership or finance team.",
+    "- When responsibility assistance context is present, ask the missing questions naturally and keep the reply short and multi-line.",
     "- If the latest message is a short follow-up like performance, automatic, hybrid, 7 seater, petrol, manual, or city use, use the conversation context to preserve the earlier budget, seating, fuel, body type, and city constraints.",
     "- Only mention Fortuner or Legender as outside-budget examples when the latest user message explicitly asks about performance, power, highway performance, or SUV power.",
     "- If the user only says sports car under a budget, keep the response focused on the closest under-budget sporty alternatives and do not mention Fortuner or Legender.",
+    "- If the user asks for test drive or finance assistance, respond naturally with the follow-up details instead of model recommendations unless the model is also clearly relevant.",
     "",
+    `Latest message asks about test drive: ${hasTestDriveIntent(input.userMessage) ? "yes" : "no"}`,
+    `Latest message asks about finance/EMI: ${hasFinanceIntent(input.userMessage) ? "yes" : "no"}`,
     `Latest message has explicit performance intent: ${hasExplicitPerformancePowerIntent(input.userMessage) ? "yes" : "no"}`,
     `Detected intent: ${input.detectedIntent.keywords.length > 0 ? input.detectedIntent.keywords.join(", ") : "none"}`,
     input.detectedIntent.budgetLimitLakh !== null
       ? `Budget limit: under ${input.detectedIntent.budgetLimitLakh} lakh`
       : "Budget limit: not detected",
+    responsibilityAssistance
+      ? [
+          "Responsibility assistance context:",
+          `Detected responsibilities: ${responsibilityAssistance.detectedResponsibilities.join(", ") || "none"}`,
+          `Test drive detected: ${responsibilityAssistance.testDrive.detected ? "yes" : "no"}`,
+          `Test drive missing fields: ${responsibilityAssistance.testDrive.missingFields.join(", ") || "none"}`,
+          `Test drive suggested fields: ${JSON.stringify(responsibilityAssistance.testDrive.suggestedFields)}`,
+          `Test drive next question: ${responsibilityAssistance.testDrive.nextQuestion || "none"}`,
+          `Finance detected: ${responsibilityAssistance.finance.detected ? "yes" : "no"}`,
+          `Finance missing fields: ${responsibilityAssistance.finance.missingFields.join(", ") || "none"}`,
+          `Finance suggested fields: ${JSON.stringify(responsibilityAssistance.finance.suggestedFields)}`,
+          `Finance next question: ${responsibilityAssistance.finance.nextQuestion || "none"}`,
+          `General advice detected: ${responsibilityAssistance.generalCarAdvice.detected ? "yes" : "no"}`,
+        ].join("\n")
+      : "Responsibility assistance context: not detected",
     "Conversation context:",
     formatConversationContext(input.conversationContext),
     "",

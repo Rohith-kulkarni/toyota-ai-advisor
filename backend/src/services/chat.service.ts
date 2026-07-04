@@ -8,6 +8,10 @@ import {
   type ConversationContext,
 } from "./ai.service";
 import {
+  analyzeResponsibilityIntent,
+  type ResponsibilityAssistance,
+} from "./responsibilityAssistant.service";
+import {
   extractToyotaSearchIntent,
   searchToyotaKnowledge,
   type ToyotaModelSearchResult,
@@ -24,6 +28,7 @@ type ChatMessageOutput = {
   sessionId: string;
   reply: string;
   matchedModels: Array<Pick<ToyotaModelSummary, "slug" | "name">>;
+  responsibilityAssistance?: ResponsibilityAssistance;
 };
 
 type ChatMessageContextItem = Pick<ChatMessage, "role" | "message">;
@@ -320,12 +325,118 @@ function getSportsFallbackReason(model: ToyotaModelSearchResult): string {
   return "Good if you want a practical Toyota with a slightly sporty feel.";
 }
 
+function hasTestDriveIntent(text: string): boolean {
+  const normalizedText = text.toLowerCase();
+
+  return [
+    "test drive",
+    "test-drive",
+    "book a test drive",
+    "book test drive",
+    "schedule a test drive",
+    "drive the car",
+    "test drive booking",
+  ].some((term) => normalizedText.includes(term));
+}
+
+function hasFinanceIntent(text: string): boolean {
+  const normalizedText = text.toLowerCase();
+
+  return ["finance", "emi", "loan", "down payment", "downpayment", "monthly installment"].some((term) =>
+    normalizedText.includes(term)
+  );
+}
+
+function buildDealershipAssistanceReply(userMessage: string): string | null {
+  const wantsTestDrive = hasTestDriveIntent(userMessage);
+  const wantsFinance = hasFinanceIntent(userMessage);
+
+  if (!wantsTestDrive && !wantsFinance) {
+    return null;
+  }
+
+  const parts: string[] = [];
+
+  if (wantsTestDrive) {
+    parts.push(
+      "Absolutely, I can help with a test drive.",
+      "",
+      "Please share:",
+      "1. City or showroom preference",
+      "2. Preferred date",
+      "3. Preferred time",
+      "",
+      "If you have a model in mind, you can mention that too."
+    );
+  }
+
+  if (wantsFinance) {
+    if (parts.length > 0) {
+      parts.push("");
+    }
+
+    parts.push(
+      "I can also help with finance or EMI guidance.",
+      "",
+      "Please share:",
+      "1. Budget or model",
+      "2. Down payment budget",
+      "3. Preferred loan tenure",
+      "4. Comfortable EMI range",
+      "",
+      "Finance details should be verified by the dealership or finance team, and I cannot promise loan approval or an exact EMI here."
+    );
+  }
+
+  return parts.join("\n").trim();
+}
+
+function buildResponsibilityReply(analysis: ResponsibilityAssistance): string | null {
+  const sections: string[] = [];
+
+  if (analysis.testDrive.detected) {
+    sections.push(
+      "Test drive assistance",
+      "I can help with a test drive request.",
+      analysis.testDrive.nextQuestion || "Please share your preferred date, time, and showroom.",
+      "The dealership team will confirm availability, so I cannot confirm the booking automatically."
+    );
+  }
+
+  if (analysis.finance.detected) {
+    if (sections.length > 0) {
+      sections.push("");
+    }
+
+    sections.push(
+      "Finance assistance",
+      "I can help with finance or EMI guidance.",
+      analysis.finance.nextQuestion ||
+        "Please share your budget, down payment, preferred tenure, and EMI comfort.",
+      "Finance details will be verified by the dealership or finance team.",
+      "I cannot promise loan approval or an exact EMI."
+    );
+  }
+
+  if (sections.length === 0) {
+    return null;
+  }
+
+  return sections.join("\n").trim();
+}
+
 function buildFallbackReply(
   matchedModels: ToyotaModelSearchResult[],
   intent: ReturnType<typeof extractToyotaSearchIntent>,
   context: ConversationContext,
   allowOutsideBudgetPerformanceModels: boolean
 ): string {
+  const dealershipAssistanceReply = buildDealershipAssistanceReply(context.searchText || "");
+
+  if (dealershipAssistanceReply) {
+    return dealershipAssistanceReply;
+  }
+
   if (intent.hasSportsPerformanceIntent && !intent.hasFamilyIntent) {
     const budgetLimit = context.budgetMaxLakh ?? intent.budgetLimitLakh;
     const budgetText = budgetLimit !== null ? `under ₹${budgetLimit} lakh` : "in this budget";
@@ -486,6 +597,15 @@ export async function handleChatMessage(input: ChatMessageInput): Promise<ChatMe
   const intent = extractToyotaSearchIntent(searchText);
   const recommendedModels = filterModelsForIntent(matchedModels, intent, conversationContext);
   const bestMatches = toMatchedModels(recommendedModels);
+  const responsibilityAssistance = await analyzeResponsibilityIntent({
+    latestUserMessage: userMessage,
+    recentChatHistory: recentChatHistory.map((message) => ({
+      role: message.role,
+      message: message.message,
+    })),
+    matchedModels: recommendedModels,
+    conversationContext,
+  });
   const matchedSummary =
     recommendedModels
       .slice(0, 3)
@@ -511,6 +631,7 @@ export async function handleChatMessage(input: ChatMessageInput): Promise<ChatMe
         })),
         detectedIntent: intent,
         conversationContext,
+        responsibilityAssistance,
       });
 
       if (

@@ -16,6 +16,15 @@ type LeadFormState = {
   interestedModel: string;
   budget: string;
   purchaseTimeline: string;
+  testDriveRequested: boolean;
+  preferredTestDriveDate: string;
+  preferredTestDriveTime: string;
+  testDriveLocation: string;
+  financeAssistanceRequested: boolean;
+  monthlyIncomeRange: string;
+  downPaymentBudget: string;
+  loanTenurePreference: string;
+  emiBudget: string;
   notes: string;
 };
 
@@ -33,6 +42,15 @@ const emptyLeadForm: LeadFormState = {
   interestedModel: "",
   budget: "",
   purchaseTimeline: "",
+  testDriveRequested: false,
+  preferredTestDriveDate: "",
+  preferredTestDriveTime: "",
+  testDriveLocation: "",
+  financeAssistanceRequested: false,
+  monthlyIncomeRange: "",
+  downPaymentBudget: "",
+  loanTenurePreference: "",
+  emiBudget: "",
   notes: "",
 };
 
@@ -177,14 +195,7 @@ function CustomerChatPage() {
     setLeadSuccess("");
 
     try {
-      const leadPayload = {
-        sessionId,
-        ...Object.fromEntries(
-          Object.entries(leadForm).filter(([, value]) => value.trim().length > 0)
-        ),
-      };
-
-      await createLeadFromChat(leadPayload as {
+      const leadPayload: {
         sessionId: string;
         name?: string;
         phone: string;
@@ -192,8 +203,70 @@ function CustomerChatPage() {
         interestedModel?: string;
         budget?: string;
         purchaseTimeline?: string;
+        testDriveRequested?: boolean;
+        preferredTestDriveDate?: string;
+        preferredTestDriveTime?: string;
+        testDriveLocation?: string;
+        financeAssistanceRequested?: boolean;
+        monthlyIncomeRange?: string;
+        downPaymentBudget?: string;
+        loanTenurePreference?: string;
+        emiBudget?: string;
         notes?: string;
-      });
+      } = {
+        sessionId,
+        phone: leadForm.phone.trim(),
+      };
+
+      if (leadForm.name.trim()) {
+        leadPayload.name = leadForm.name.trim();
+      }
+      if (leadForm.city.trim()) {
+        leadPayload.city = leadForm.city.trim();
+      }
+      if (leadForm.interestedModel.trim()) {
+        leadPayload.interestedModel = leadForm.interestedModel.trim();
+      }
+      if (leadForm.budget.trim()) {
+        leadPayload.budget = leadForm.budget.trim();
+      }
+      if (leadForm.purchaseTimeline.trim()) {
+        leadPayload.purchaseTimeline = leadForm.purchaseTimeline.trim();
+      }
+      if (leadForm.notes.trim()) {
+        leadPayload.notes = leadForm.notes.trim();
+      }
+
+      if (leadForm.testDriveRequested) {
+        leadPayload.testDriveRequested = true;
+        if (leadForm.preferredTestDriveDate.trim()) {
+          leadPayload.preferredTestDriveDate = leadForm.preferredTestDriveDate.trim();
+        }
+        if (leadForm.preferredTestDriveTime.trim()) {
+          leadPayload.preferredTestDriveTime = leadForm.preferredTestDriveTime.trim();
+        }
+        if (leadForm.testDriveLocation.trim()) {
+          leadPayload.testDriveLocation = leadForm.testDriveLocation.trim();
+        }
+      }
+
+      if (leadForm.financeAssistanceRequested) {
+        leadPayload.financeAssistanceRequested = true;
+        if (leadForm.monthlyIncomeRange.trim()) {
+          leadPayload.monthlyIncomeRange = leadForm.monthlyIncomeRange.trim();
+        }
+        if (leadForm.downPaymentBudget.trim()) {
+          leadPayload.downPaymentBudget = leadForm.downPaymentBudget.trim();
+        }
+        if (leadForm.loanTenurePreference.trim()) {
+          leadPayload.loanTenurePreference = leadForm.loanTenurePreference.trim();
+        }
+        if (leadForm.emiBudget.trim()) {
+          leadPayload.emiBudget = leadForm.emiBudget.trim();
+        }
+      }
+
+      await createLeadFromChat(leadPayload);
 
       setHasSubmittedLead(true);
       setLeadSuccess("Thank you. A Toyota advisor will contact you soon.");
@@ -352,6 +425,164 @@ function CustomerChatPage() {
                   />
                 </label>
               </div>
+
+              <section className="lead-section">
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={leadForm.testDriveRequested}
+                    onChange={(event) =>
+                      setLeadForm((current) => ({
+                        ...current,
+                        testDriveRequested: event.target.checked,
+                        ...(event.target.checked
+                          ? {}
+                          : {
+                              preferredTestDriveDate: "",
+                              preferredTestDriveTime: "",
+                              testDriveLocation: "",
+                            }),
+                      }))
+                    }
+                  />
+                  <span>I want a test drive</span>
+                </label>
+                {leadForm.testDriveRequested ? (
+                  <div className="lead-section-body">
+                    <div className="grid-two">
+                      <label>
+                        <span>Preferred date</span>
+                        <input
+                          value={leadForm.preferredTestDriveDate}
+                          onChange={(event) =>
+                            setLeadForm((current) => ({
+                              ...current,
+                              preferredTestDriveDate: event.target.value,
+                            }))
+                          }
+                          type="date"
+                        />
+                      </label>
+                      <label>
+                        <span>Preferred time</span>
+                        <input
+                          value={leadForm.preferredTestDriveTime}
+                          onChange={(event) =>
+                            setLeadForm((current) => ({
+                              ...current,
+                              preferredTestDriveTime: event.target.value,
+                            }))
+                          }
+                          type="text"
+                          placeholder="Morning"
+                        />
+                      </label>
+                    </div>
+                    <label>
+                      <span>Location / showroom / city</span>
+                      <input
+                        value={leadForm.testDriveLocation}
+                        onChange={(event) =>
+                          setLeadForm((current) => ({
+                            ...current,
+                            testDriveLocation: event.target.value,
+                          }))
+                        }
+                        type="text"
+                        placeholder="Hyderabad showroom"
+                      />
+                    </label>
+                  </div>
+                ) : null}
+              </section>
+
+              <section className="lead-section">
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={leadForm.financeAssistanceRequested}
+                    onChange={(event) =>
+                      setLeadForm((current) => ({
+                        ...current,
+                        financeAssistanceRequested: event.target.checked,
+                        ...(event.target.checked
+                          ? {}
+                          : {
+                              monthlyIncomeRange: "",
+                              downPaymentBudget: "",
+                              loanTenurePreference: "",
+                              emiBudget: "",
+                            }),
+                      }))
+                    }
+                  />
+                  <span>I want finance or EMI assistance</span>
+                </label>
+                {leadForm.financeAssistanceRequested ? (
+                  <div className="lead-section-body">
+                    <div className="grid-two">
+                      <label>
+                        <span>Monthly income range</span>
+                        <input
+                          value={leadForm.monthlyIncomeRange}
+                          onChange={(event) =>
+                            setLeadForm((current) => ({
+                              ...current,
+                              monthlyIncomeRange: event.target.value,
+                            }))
+                          }
+                          type="text"
+                          placeholder="1-2 lakh"
+                        />
+                      </label>
+                      <label>
+                        <span>Down payment budget</span>
+                        <input
+                          value={leadForm.downPaymentBudget}
+                          onChange={(event) =>
+                            setLeadForm((current) => ({
+                              ...current,
+                              downPaymentBudget: event.target.value,
+                            }))
+                          }
+                          type="text"
+                          placeholder="5 lakh"
+                        />
+                      </label>
+                    </div>
+                    <div className="grid-two">
+                      <label>
+                        <span>Loan tenure preference</span>
+                        <input
+                          value={leadForm.loanTenurePreference}
+                          onChange={(event) =>
+                            setLeadForm((current) => ({
+                              ...current,
+                              loanTenurePreference: event.target.value,
+                            }))
+                          }
+                          type="text"
+                          placeholder="5 years"
+                        />
+                      </label>
+                      <label>
+                        <span>EMI budget</span>
+                        <input
+                          value={leadForm.emiBudget}
+                          onChange={(event) =>
+                            setLeadForm((current) => ({
+                              ...current,
+                              emiBudget: event.target.value,
+                            }))
+                          }
+                          type="text"
+                          placeholder="30000"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : null}
+              </section>
 
               <label>
                 <span>Notes</span>

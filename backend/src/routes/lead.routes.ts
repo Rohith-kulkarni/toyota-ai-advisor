@@ -5,6 +5,8 @@ import { requireAdmin, requireAuth } from "../middleware/auth.middleware";
 
 export const leadRoutes = Router();
 
+// TODO: protect n8n internal endpoints with an API key before production client rollout.
+
 /**
  * @swagger
  * /api/leads/from-chat:
@@ -44,6 +46,33 @@ export const leadRoutes = Router();
  *               purchaseTimeline:
  *                 type: string
  *                 example: Within 1 month
+ *               testDriveRequested:
+ *                 type: boolean
+ *                 example: true
+ *               preferredTestDriveDate:
+ *                 type: string
+ *                 example: 2026-07-05
+ *               preferredTestDriveTime:
+ *                 type: string
+ *                 example: Morning
+ *               testDriveLocation:
+ *                 type: string
+ *                 example: Hyderabad showroom
+ *               financeAssistanceRequested:
+ *                 type: boolean
+ *                 example: true
+ *               monthlyIncomeRange:
+ *                 type: string
+ *                 example: 1-2 lakh
+ *               downPaymentBudget:
+ *                 type: string
+ *                 example: 5 lakh
+ *               loanTenurePreference:
+ *                 type: string
+ *                 example: 5 years
+ *               emiBudget:
+ *                 type: string
+ *                 example: 30000
  *               notes:
  *                 type: string
  *                 example: Looking for hybrid automatic family car
@@ -60,6 +89,43 @@ leadRoutes.post("/from-chat", asyncHandler(leadController.createFromChat));
 /**
  * @swagger
  * /api/leads:
+ *   post:
+ *     tags:
+ *       - Leads
+ *     summary: Create a lead for n8n compatibility
+ *     operationId: createLead
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               customerName:
+ *                 type: string
+ *                 example: Rohith
+ *               phone:
+ *                 type: string
+ *                 example: 9876543210
+ *               branch:
+ *                 type: string
+ *                 example: Sanathnagar
+ *               modelInterest:
+ *                 type: string
+ *                 example: Innova Hycross
+ *               intent:
+ *                 type: string
+ *                 example: test drive
+ *               source:
+ *                 type: string
+ *                 example: ai_advisor_chat
+ *     responses:
+ *       201:
+ *         description: Lead created successfully
+ *       400:
+ *         description: Invalid request body
  *   get:
  *     tags:
  *       - Leads
@@ -90,6 +156,7 @@ leadRoutes.post("/from-chat", asyncHandler(leadController.createFromChat));
  *       403:
  *         description: Forbidden
  */
+leadRoutes.post("/", asyncHandler(leadController.createLeadEntry));
 leadRoutes.get("/", requireAuth, requireAdmin, asyncHandler(leadController.listLeads));
 
 /**
@@ -117,6 +184,117 @@ leadRoutes.get("/", requireAuth, requireAdmin, asyncHandler(leadController.listL
  *         description: Lead not found
  */
 leadRoutes.get("/:id", requireAuth, requireAdmin, asyncHandler(leadController.getLead));
+
+/**
+ * @swagger
+ * /api/leads/{id}/test-drive:
+ *   patch:
+ *     tags:
+ *       - Leads
+ *     summary: Update a lead test drive details
+ *     operationId: updateLeadTestDrive
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - testDriveRequested
+ *             properties:
+ *               testDriveRequested:
+ *                 type: boolean
+ *                 example: true
+ *               preferredTestDriveDate:
+ *                 type: string
+ *                 example: 2026-07-05
+ *               preferredTestDriveTime:
+ *                 type: string
+ *                 example: Morning
+ *               testDriveLocation:
+ *                 type: string
+ *                 example: Hyderabad showroom
+ *     responses:
+ *       200:
+ *         description: Test drive details updated
+ *       400:
+ *         description: Invalid request body
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Lead not found
+ */
+leadRoutes.patch(
+  "/:id/test-drive",
+  requireAuth,
+  requireAdmin,
+  asyncHandler(leadController.changeLeadTestDrive)
+);
+
+/**
+ * @swagger
+ * /api/leads/{id}/finance:
+ *   patch:
+ *     tags:
+ *       - Leads
+ *     summary: Update a lead finance details
+ *     operationId: updateLeadFinance
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - financeAssistanceRequested
+ *             properties:
+ *               financeAssistanceRequested:
+ *                 type: boolean
+ *                 example: true
+ *               monthlyIncomeRange:
+ *                 type: string
+ *                 example: 1-2 lakh
+ *               downPaymentBudget:
+ *                 type: string
+ *                 example: 5 lakh
+ *               loanTenurePreference:
+ *                 type: string
+ *                 example: 5 years
+ *               emiBudget:
+ *                 type: string
+ *                 example: 30000
+ *     responses:
+ *       200:
+ *         description: Finance details updated
+ *       400:
+ *         description: Invalid request body
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Lead not found
+ */
+leadRoutes.patch(
+  "/:id/finance",
+  requireAuth,
+  requireAdmin,
+  asyncHandler(leadController.changeLeadFinance)
+);
 
 /**
  * @swagger

@@ -12,6 +12,7 @@ import { authRouter } from "./routes/auth.routes";
 import { knowledgeRouter } from "./routes/knowledge.routes";
 import { chatRoutes } from "./routes/chat.routes";
 import { leadRoutes } from "./routes/lead.routes";
+import { testDriveRoutes } from "./routes/testDrive.routes";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -68,6 +69,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/knowledge", knowledgeRouter);
 app.use("/api/chat", chatRoutes);
 app.use("/api/leads", leadRoutes);
+app.use("/api/test-drives", testDriveRoutes);
 app.get("/api/docs.json", (_req, res) => {
   res.json(swaggerSpec);
 });

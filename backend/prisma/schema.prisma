@@ -44,6 +44,15 @@ model Lead {
   interestedModel  String?
   budget           String?
   purchaseTimeline String?
+  testDriveRequested Boolean   @default(false)
+  preferredTestDriveDate String?
+  preferredTestDriveTime String?
+  testDriveLocation String?
+  financeAssistanceRequested Boolean @default(false)
+  monthlyIncomeRange String?
+  downPaymentBudget String?
+  loanTenurePreference String?
+  emiBudget        String?
   source           String     @default("website_chat")
   status           LeadStatus @default(NEW)
   notes            String?
